@@ -1,10 +1,10 @@
-import { useSortable } from "@dnd-kit/sortable";
+import { useSortable, SortableContext } from "@dnd-kit/sortable";
 import TrashIcon from "../icons/TrashIcon";
 import PlusIcon from "../icons/PlusIcon";
 import TaskCard from "./TaskCard";
 import type { Column, Id, Task } from "../types"
 import {CSS} from "@dnd-kit/utilities";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 interface Props{
     column: Column;
@@ -13,17 +13,22 @@ interface Props{
 
     createTask: (columnId: Id) => void;
     tasks: Task[];
+    deleteTask: (id: Id) => void;
+    updateTask: (id: Id, content: string) => void;
+
 }
 
 function ColumnContainer(props: Props) {
-    const { column, deleteColumn, updateColumn, createTask, tasks } = props;
+    const { column, deleteColumn, updateColumn, createTask, tasks, deleteTask, updateTask } = props;
 
     const [editMode, setEditMode] = useState(false);
+
+    const tasksIds = useMemo(() => {return tasks.map(task => task.id)}, [tasks]);
 
     const { setNodeRef, attributes, listeners, transform, transition, isDragging} = useSortable({
         id: column.id,
         data: {
-            type: 'column',
+            type: 'Column',
             column,
         },
         disabled: editMode,
@@ -78,6 +83,7 @@ function ColumnContainer(props: Props) {
                 font-bold
                 border-columnBackgroundColor
                 border-4
+                flex
                 items-center
                 justify-between
             "
@@ -95,10 +101,9 @@ function ColumnContainer(props: Props) {
                     "
 
                 >0</div>
-                    {column.title}
                     {!editMode && column.title}
                     {editMode && (<input className="bg-black focus:border-rose-500 border
-                    roumfded onutline-none px-2"
+                    rounded outline-none px-2"
                     value={column.title} onChange={(e) => updateColumn(column.id, e.target.value)} 
                     autoFocus onBlur={() =>{setEditMode(false)}}
                     onKeyDown={(e) => {
@@ -125,10 +130,12 @@ function ColumnContainer(props: Props) {
         
         {/* Column task container */}
         <div className="flex flex-grow flex-col gap-4 p-2 overflow-x-hidden overflow-y-auto">
-        {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
+            <SortableContext items={tasksIds}>
+            {tasks.map((task) => (
+                <TaskCard key={task.id} task={task} deleteTask={deleteTask} updateTask={updateTask}/>
         
-        ))}
+            ))}
+            </SortableContext>
         </div>
         {/* Column footer */}
         <button className="flex gap-2 items-center
